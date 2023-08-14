@@ -4,6 +4,7 @@ import os
 from PIL import Image, ImageTk
 import openpyxl
 import numpy as np
+import face_recognition
 
 class CameraApp:
     def __init__(self, root):
@@ -70,23 +71,41 @@ class CameraApp:
             np.save(npy_path, image_data)
             print(f"照片已保存為 {npy_path}")
             
-            self.record_to_excel(employee_id, employee_name, jpg_path, npy_path)
-
-    def record_to_excel(self, employee_id, employee_name, jpg_path, npy_path):
+            # 計算臉部嵌入
+            face_embedding = self.calculate_face_embedding(image_data)
+            
+            # 儲存成 .npy 嵌入文件
+            if face_embedding is not None:
+                embedding_npy_path = os.path.join(npy_folder, f"{image_name}_embedding.npy")
+                np.save(embedding_npy_path, face_embedding)
+                print(f"嵌入已保存為 {embedding_npy_path}")
+                self.record_to_excel(employee_id, employee_name, jpg_path, npy_path, embedding_npy_path)
+            else:
+                print("未能檢測到人臉，嵌入未保存")
+            
+    def calculate_face_embedding(self, image_data):
+        # 使用 face_recognition 函式庫計算嵌入
+        face_image = face_recognition.load_image_file(image_data)
+        face_embeddings = face_recognition.face_encodings(face_image)
+        if len(face_embeddings) > 0:
+            return face_embeddings[0]
+        else:
+            return None
+        
+    def record_to_excel(self, employee_id, employee_name, jpg_path, npy_path, embedding_npy_path):
         excel_file = "employee_records.xlsx"
         if not os.path.exists(excel_file):
             workbook = openpyxl.Workbook()
             sheet = workbook.active
-            sheet.append(["員工編號", "員工姓名", "JPG檔", "NPY檔"])
+            sheet.append(["員工編號", "員工姓名", "JPG檔", "NPY檔", "嵌入檔"])
         else:
             workbook = openpyxl.load_workbook(excel_file)
             sheet = workbook.active
 
-        sheet.append([employee_id, employee_name, jpg_path, npy_path])
+        sheet.append([employee_id, employee_name, jpg_path, npy_path, embedding_npy_path])
         workbook.save(excel_file)
 
 if __name__ == "__main__":
     root = tk.Tk()
     app = CameraApp(root)
     root.mainloop()
-
