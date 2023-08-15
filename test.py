@@ -77,10 +77,11 @@ def grab_face_and_save_embedding():
             face_embedding = get_face_embedding(face_image)
             # Get the face embedding using face_recognition
             
-            similarity_threshold = 0.93
+            similarity_threshold = 0.95
             if face_embedding is not None:
                 target=face_embedding 
                 most_similar_index, most_similar_similarity = find_most_similar(target, face_embeddings)
+                print(most_similar_similarity)
                 if most_similar_similarity >= similarity_threshold:
                     id,score=find_most_similar(target,face_embeddings)
                     #put_text_on_image(frame,str(id),(left-20, top-20))
